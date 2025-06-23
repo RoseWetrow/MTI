@@ -129,8 +129,6 @@ async def fetch_insert_datasets(conn, dataset_id, dataset_name):
 
                 skip += tasks_count * top               # смещение указателя на следующую пачку из n задач
 
-            temp_table_actions('swap', conn, dataset_name)
-
         except Exception as e:
             print(f"Ошибка при работе с пачками в методе fetch_insert_datasets: {e}")
 
@@ -158,12 +156,15 @@ async def checkingForUpdates():
                     await fetch_insert_datasets(conn, dataset_id, name)
 
                     for_updates.append((name, remote_version))
-            update_local_versions(conn, for_updates) 
-            # !!! Добавить сюда переименование таблиц в основные !!!
+           
             if for_updates:
+                for updates in for_updates:
+                    update_local_versions(conn, for_updates)       # обновление локальной версии датасета
+                    temp_table_actions('swap', conn, updates[0])   # переименование временных таблиц в основные
+
                 end_time = time.perf_counter()
                 print(f"Обновление завершено за {end_time - start_time:.2f} секунд.")
-                save_current_date_to_file() # сохранение текущей даты актуализации
+                save_current_date_to_file()                        # сохранение текущей даты актуализации
             else:
                 print("Данные актуальны. Обновление не требуется.")
         except Exception as e:
